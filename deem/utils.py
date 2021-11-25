@@ -30,14 +30,14 @@ def load_config(config_dir, experiment_id):
     found_params = dict()
     for config in model_configs:
         with open(config, 'r') as cfg:
-            config_dict = yaml.load(cfg)
+            config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
             if 'Base' in config_dict:
                 found_params['Base'] = config_dict['Base']
             if experiment_id in config_dict:
                 found_params[experiment_id] = config_dict[experiment_id]
         if len(found_params) == 2:
             break
-    # Update base setting first so that values can be overrided when conflict 
+    # Update base setting first so that values can be overrided when conflict
     # with experiment_id settings
     params.update(found_params.get('Base', {}))
     params.update(found_params.get(experiment_id))
@@ -50,7 +50,7 @@ def load_config(config_dir, experiment_id):
         dataset_configs = glob.glob(os.path.join(config_dir, 'dataset_config/*.yaml'))
     for config in dataset_configs:
         with open(config, 'r') as cfg:
-            config_dict = yaml.load(cfg)
+            config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
             if dataset_id in config_dict:
                 params.update(config_dict[dataset_id])
                 break
@@ -65,9 +65,9 @@ def set_logger(params):
     log_file = os.path.join(log_dir, model_id + '.log')
 
     # logs will not show in the file without the two lines.
-    for handler in logging.root.handlers[:]: 
+    for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
-        
+
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s P%(process)d %(levelname)s %(message)s',
                         handlers=[logging.FileHandler(log_file, mode='w'),

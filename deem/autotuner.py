@@ -1,4 +1,4 @@
-# ==============================================================================     
+# ==============================================================================
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -34,7 +34,7 @@ def load_model_config(config_dir, experiment_id):
     found_keys = []
     for config in model_configs:
         with open(config, "r") as cfg:
-            config_dict = yaml.load(cfg)
+            config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
             if "Base" in config_dict:
                 params.update(config_dict["Base"])
                 found_keys.append("Base")
@@ -55,7 +55,7 @@ def load_dataset_config(config_dir, dataset_id):
         dataset_configs = glob.glob(os.path.join(config_dir, "dataset_config/*.yaml"))
     for config in dataset_configs:
         with open(config, "r") as cfg:
-            config_dict = yaml.load(cfg)
+            config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
             if dataset_id in config_dict:
                 params.update(config_dict[dataset_id])
                 break
@@ -63,7 +63,7 @@ def load_dataset_config(config_dir, dataset_id):
 
 def enumerate_params(config_file, exclude_expid=[]):
     with open(config_file, "r") as cfg:
-        config_dict = yaml.load(cfg)
+        config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
     # tuning space
     tune_dict = config_dict["tuner_space"]
     for k, v in tune_dict.items():
@@ -81,11 +81,11 @@ def enumerate_params(config_file, exclude_expid=[]):
         dataset_dict = config_dict["dataset_config"][dataset_id]
     else:
         dataset_dict = load_dataset_config(base_config_dir, dataset_id)
-        
+
     if model_dict["dataset_id"] == "TBD": # rename base expid
         model_dict["dataset_id"] = dataset_id
         experiment_id = model_dict["model"] + "_" + dataset_id
-        
+
     # key checking
     tuner_keys = set(tune_dict.keys())
     base_keys = set(model_dict.keys()).union(set(dataset_dict.keys()))
@@ -119,7 +119,7 @@ def enumerate_params(config_file, exclude_expid=[]):
     model_param_combs = dict()
     for idx, values in enumerate(itertools.product(*map(model_dict.get, model_para_keys))):
         model_param_combs[idx + 1] = dict(zip(model_para_keys, values))
-        
+
     # update dataset_id into model params
     merged_param_combs = dict()
     for idx, item in enumerate(itertools.product(model_param_combs.values(),
@@ -138,7 +138,7 @@ def enumerate_params(config_file, exclude_expid=[]):
     model_config = os.path.join(config_dir, "model_config.yaml")
     with open(model_config, "w") as fw:
         yaml.dump(merged_param_combs, fw, default_flow_style=None, indent=4)
-    print("Enumerate all tuner configurations done.")    
+    print("Enumerate all tuner configurations done.")
     return config_dir
 
 def load_experiment_ids(config_dir):
@@ -148,7 +148,7 @@ def load_experiment_ids(config_dir):
     experiment_id_list = []
     for config in model_configs:
         with open(config, "r") as cfg:
-            config_dict = yaml.load(cfg)
+            config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
             experiment_id_list += config_dict.keys()
     return sorted(experiment_id_list)
 

@@ -30,9 +30,9 @@ def seed_everything(seed=1029):
 
 def set_device(gpu=-1):
     if gpu >= 0 and torch.cuda.is_available():
-        device = torch.device("cuda: " + str(gpu))
+        device = torch.device("cuda:" + str(gpu))
     else:
-        device = torch.device("cpu")   
+        device = torch.device("cpu")
     return device
 
 def set_optimizer(optimizer):
@@ -86,14 +86,14 @@ def set_activation(activation):
 
 def pad_sequences(sequences, maxlen=None, dtype='int32',
                   padding='pre', truncating='pre', value=0.):
-    """ Pads sequences (list of list) to the ndarray of same length 
+    """ Pads sequences (list of list) to the ndarray of same length
         This is an equivalent implementation of tf.keras.preprocessing.sequence.pad_sequences
         for Pytorch
     """
 
     assert padding in ["pre", "post"], "Invalid padding={}.".format(padding)
     assert truncating in ["pre", "post"], "Invalid truncating={}.".format(truncating)
-    
+
     if maxlen is None:
         maxlen = max(len(x) for x in sequences)
     arr = np.full((len(sequences), maxlen), value, dtype=dtype)

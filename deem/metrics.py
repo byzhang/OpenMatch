@@ -6,14 +6,14 @@ import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from tqdm import tqdm
 
-def evaluate_metrics(user_embs, 
-                     item_embs, 
-                     train_user2items, 
-                     valid_user2items, 
+def evaluate_metrics(user_embs,
+                     item_embs,
+                     train_user2items,
+                     valid_user2items,
                      query_indexes,
                      metrics,
                      parallel=True):
-    logging.info("Evaluating metrics for {:d} users...".format(len(user_embs)))
+    logging.info("Evaluating metrics for {:d} users {:d} items...".format(len(user_embs), len(item_embs)))
     metric_callers = []
     max_topk = 0
     for metric in metrics:
@@ -22,7 +22,7 @@ def evaluate_metrics(user_embs,
             max_topk = max(max_topk, int(metric.split("k=")[-1].strip(")")))
         except:
             raise NotImplementedError('metrics={} not implemented.'.format(metric))
-    
+
     if parallel:
         num_workers = 2
         with ProcessPoolExecutor(max_workers=num_workers) as executor:
@@ -35,7 +35,7 @@ def evaluate_metrics(user_embs,
                                              train_user2items, valid_user2items, metric_callers, max_topk))
             results = [res for future in tqdm(as_completed(tasks), total=len(tasks)) for res in future.result()]
     else:
-        results = evaluate_block(user_embs, item_embs, query_indexes, train_user2items, 
+        results = evaluate_block(user_embs, item_embs, query_indexes, train_user2items,
                                  valid_user2items, metric_callers, max_topk)
     average_result = np.average(np.array(results), axis=0).tolist()
     return_dict = dict(zip(metrics, average_result))
@@ -43,7 +43,7 @@ def evaluate_metrics(user_embs,
     return return_dict
 
 
-def evaluate_block(chunk_user_embs, item_embs, chunk_query_indexes, train_user2items, 
+def evaluate_block(chunk_user_embs, item_embs, chunk_query_indexes, train_user2items,
                    valid_user2items, metric_callers, max_topk):
     sim_matrix = np.dot(chunk_user_embs, item_embs.T)
     for i, query_index in enumerate(chunk_query_indexes):
@@ -179,7 +179,3 @@ class MAP(object):
                 pos += 1
                 precision += pos / (i + 1.0)
         return precision / (pos + 1e-12)
-
-
-
-
