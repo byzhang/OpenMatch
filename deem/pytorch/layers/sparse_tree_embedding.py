@@ -1,13 +1,16 @@
 import entmax
 import torch
 from torch import nn
+from ..torch_utils import set_device
 
 
 class ObliviousTreeEmbedding(nn.Module):
-    def __init__(self, in_features, width, depth, entmax_alpha=4.0):
+    def __init__(self, in_features, width, depth, entmax_alpha=4.0, gpu=-1):
         super().__init__()
+        self.device = set_device(gpu)
         self.layers = [nn.Linear(in_features, width) for _ in range(depth)]
         self.entmax_alpha = entmax_alpha
+        self.to(self.device)
 
     def forward(self, X):
         factors = [entmax.entmax_bisect(layer(X), alpha=self.entmax_alpha, dim=-1, n_iter=25) for layer in self.layers]

@@ -61,8 +61,8 @@ class SimpleX(BaseModel):
         self.dropout = nn.Dropout(net_dropout)
         self.enable_sparse_tree_embedding = enable_sparse_tree_embedding
         if enable_sparse_tree_embedding:
-            self.user_ote = ObliviousTreeEmbedding(embedding_dim, sparse_tree_width, sparse_tree_depth, entmax_alpha)
-            self.item_ote = ObliviousTreeEmbedding(embedding_dim, sparse_tree_width, sparse_tree_depth, entmax_alpha)
+            self.user_ote = ObliviousTreeEmbedding(embedding_dim, sparse_tree_width, sparse_tree_depth, entmax_alpha, gpu=gpu)
+            self.item_ote = ObliviousTreeEmbedding(embedding_dim, sparse_tree_width, sparse_tree_depth, entmax_alpha, gpu=gpu)
         self.compile(lr=learning_rate, **kwargs)
 
     def forward(self, inputs):
