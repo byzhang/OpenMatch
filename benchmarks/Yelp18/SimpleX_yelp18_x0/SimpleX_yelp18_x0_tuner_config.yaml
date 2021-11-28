@@ -40,12 +40,12 @@ tuner_space:
     margin: 0.9
     enable_bias: False
     enable_sparse_tree_embedding: [True, False]
-    sparse_tree_width: [100]
+    sparse_tree_width: [50]
     sparse_tree_depth: [2]
     entmax_alpha: [4.0, 2.0]
     ignore_pos_items: False
     sampling_num_process: 1
     fix_sampling_seeds: False
-    batch_size: 64
+    batch_size: 256
     seed: 2019
     monitor: Recall(k=20)
