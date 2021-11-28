@@ -88,7 +88,7 @@ class SimpleX(BaseModel):
         user_history_emb = user_emb_dict[self.user_history_field]
         user_vec = self.behavior_aggregation(user_id_emb, user_history_emb)
         if self.enable_sparse_tree_embedding:
-            user_vecs = self.user_ote(user_vec)
+            user_vec = self.user_ote(user_vec)
         if self.similarity_score == "cosine":
             user_vec = F.normalize(user_vec)
         if self.enable_bias:
