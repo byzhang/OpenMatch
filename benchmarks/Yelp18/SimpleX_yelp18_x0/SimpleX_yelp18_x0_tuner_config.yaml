@@ -24,7 +24,7 @@ dataset_config:
 tuner_space:
     model_root: './Yelp18/SimpleX_yelp18_x0/'
     learning_rate: 1.e-4
-    embedding_dim: 64
+    embedding_dim: [64]
     num_negs: [1000]
     embedding_regularizer: [1.e-8]
     similarity_score: cosine
@@ -39,11 +39,13 @@ tuner_space:
     negative_weight: [150]
     margin: 0.9
     enable_bias: False
+    enable_sparse_tree_embedding: [True, False]
+    sparse_tree_width: [100]
+    sparse_tree_depth: [2]
+    entmax_alpha: [4.0, 2.0]
     ignore_pos_items: False
     sampling_num_process: 1
     fix_sampling_seeds: False
     batch_size: 512
     seed: 2019
     monitor: Recall(k=20)
-
-    

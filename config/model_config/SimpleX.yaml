@@ -29,3 +29,7 @@ SimpleX_base:
     seed: 2019
     monitor: 'Recall(k=20)'
     monitor_mode: 'max'
+    enable_sparse_tree_embedding: False
+    sparse_tree_width: 100
+    sparse_tree_depth: 2
+    entmax_alpha: 4.0

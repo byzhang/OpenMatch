@@ -1,19 +1,19 @@
 from torch import nn
 import torch
 from .base_model import BaseModel
-from ..layers import EmbeddingDictLayer, EmbeddingLayer
+from ..layers import EmbeddingDictLayer, EmbeddingLayer, ObliviousTreeEmbedding
 import torch.nn.functional as F
 import numpy as np
 
 
 class SimpleX(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="SimpleX", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_initializer="lambda w: nn.init.normal_(w, std=1e-4)", 
-                 embedding_dim=10, 
+    def __init__(self,
+                 feature_map,
+                 model_id="SimpleX",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_initializer="lambda w: nn.init.normal_(w, std=1e-4)",
+                 embedding_dim=10,
                  user_id_field="user_id",
                  item_id_field="item_id",
                  user_history_field="user_history",
@@ -27,10 +27,14 @@ class SimpleX(BaseModel):
                  net_regularizer=None,
                  embedding_regularizer=None,
                  similarity_score="dot",
+                 enable_sparse_tree_embedding=False,
+                 sparse_tree_width=100,
+                 sparse_tree_depth=2,
+                 entmax_alpha=4.0,
                  **kwargs):
-        super(SimpleX, self).__init__(feature_map, 
-                                      model_id=model_id, 
-                                      gpu=gpu, 
+        super(SimpleX, self).__init__(feature_map,
+                                      model_id=model_id,
+                                      gpu=gpu,
                                       embedding_regularizer=embedding_regularizer,
                                       net_regularizer=net_regularizer,
                                       num_negs=num_negs,
@@ -41,22 +45,26 @@ class SimpleX(BaseModel):
         self.user_id_field = user_id_field
         self.user_history_field = user_history_field
         self.embedding_layer = EmbeddingDictLayer(feature_map, embedding_dim)
-        self.behavior_aggregation = BehaviorAggregator(embedding_dim, 
+        self.behavior_aggregation = BehaviorAggregator(embedding_dim,
                                                        gamma=gamma,
-                                                       aggregator=aggregator, 
+                                                       aggregator=aggregator,
                                                        dropout_rate=attention_dropout)
         self.enable_bias = enable_bias
         if self.enable_bias:
             self.user_bias = EmbeddingLayer(feature_map, 1,
-                                            disable_sharing_pretrain=True, 
+                                            disable_sharing_pretrain=True,
                                             required_feature_columns=[user_id_field])
-            self.item_bias = EmbeddingLayer(feature_map, 1, 
-                                            disable_sharing_pretrain=True, 
+            self.item_bias = EmbeddingLayer(feature_map, 1,
+                                            disable_sharing_pretrain=True,
                                             required_feature_columns=[item_id_field])
             self.global_bias = nn.Parameter(torch.zeros(1))
         self.dropout = nn.Dropout(net_dropout)
+        self.enable_sparse_tree_embedding = enable_sparse_tree_embedding
+        if enable_sparse_tree_embedding:
+            self.user_ote = ObliviousTreeEmbedding(embedding_dim, sparse_tree_width, sparse_tree_depth, entmax_alpha)
+            self.item_ote = ObliviousTreeEmbedding(embedding_dim, sparse_tree_width, sparse_tree_depth, entmax_alpha)
         self.compile(lr=learning_rate, **kwargs)
-            
+
     def forward(self, inputs):
         """
         Inputs: [user_dict, item_dict, label]
@@ -65,7 +73,7 @@ class SimpleX(BaseModel):
         user_vecs = self.user_tower(user_dict)
         user_vecs = self.dropout(user_vecs)
         item_vecs = self.item_tower(item_dict)
-        y_pred = torch.bmm(item_vecs.view(user_vecs.size(0), self.num_negs + 1, -1), 
+        y_pred = torch.bmm(item_vecs.view(user_vecs.size(0), self.num_negs + 1, -1),
                            user_vecs.unsqueeze(-1)).squeeze(-1)
         if self.enable_bias: # user_bias and global_bias only influence training, but not inference for ranking
             y_pred += self.user_bias(self.to_device(user_dict)) + self.global_bias
@@ -79,9 +87,11 @@ class SimpleX(BaseModel):
         user_id_emb = user_emb_dict[self.user_id_field]
         user_history_emb = user_emb_dict[self.user_history_field]
         user_vec = self.behavior_aggregation(user_id_emb, user_history_emb)
+        if self.enable_sparse_tree_embedding:
+            user_vecs = self.user_ote(user_vec)
         if self.similarity_score == "cosine":
             user_vec = F.normalize(user_vec)
-        if self.enable_bias: 
+        if self.enable_bias:
             user_vec = torch.cat([user_vec, torch.ones(user_vec.size(0), 1).to(self.device)], dim=-1)
         return user_vec
 
@@ -89,6 +99,8 @@ class SimpleX(BaseModel):
         item_inputs = self.to_device(inputs)
         item_vec_dict = self.embedding_layer(item_inputs, feature_source="item")
         item_vec = self.embedding_layer.dict2tensor(item_vec_dict)
+        if self.enable_sparse_tree_embedding:
+            item_vec = self.item_ote(item_vec)
         if self.similarity_score == "cosine":
             item_vec = F.normalize(item_vec)
         if self.enable_bias:
