@@ -73,6 +73,7 @@ class SimpleX(BaseModel):
         user_vecs = self.user_tower(user_dict)
         user_vecs = self.dropout(user_vecs)
         item_vecs = self.item_tower(item_dict)
+        # TODO: support sparse user_vecs and item_vecs
         y_pred = torch.bmm(item_vecs.view(user_vecs.size(0), self.num_negs + 1, -1),
                            user_vecs.unsqueeze(-1)).squeeze(-1)
         if self.enable_bias: # user_bias and global_bias only influence training, but not inference for ranking

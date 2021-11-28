@@ -18,6 +18,7 @@ class ObliviousTreeEmbedding(nn.Module):
         factors = [entmax.entmax_bisect(factor, alpha=self.entmax_alpha, dim=-1, n_iter=25) for factor in dense_factors]
         output = factors[0]
         for x in range(1, len(factors)):
+            # TODO: batch outer product on sparse tensors (broadcasting to dim 0)
             output = torch.einsum('bi,bj->bij', (output, factors[x]))  # batch outer product
             output = torch.flatten(output, start_dim=1)  # flatten to batched vectors
         return output
