@@ -46,6 +46,6 @@ tuner_space:
     ignore_pos_items: False
     sampling_num_process: 1
     fix_sampling_seeds: False
-    batch_size: 512
+    batch_size: 128
     seed: 2019
     monitor: Recall(k=20)
