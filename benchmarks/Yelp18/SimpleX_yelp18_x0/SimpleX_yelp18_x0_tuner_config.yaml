@@ -23,7 +23,7 @@ dataset_config:
 
 tuner_space:
     model_root: './Yelp18/SimpleX_yelp18_x0/'
-    learning_rate: 1.e-4
+    learning_rate: 1.e-3
     embedding_dim: [64]
     num_negs: [500]
     embedding_regularizer: [1.e-8]
